@@ -1,0 +1,10 @@
+name: CAT
+version: '1.0-SNAPSHOT'
+main: org.cat.cat.CAT
+api-version: '1.20'
+load: STARTUP
+commands:
+  chainmine:
+    description: Chain mine.
+    usage: /<command>
+    permission-message: You can't use it!
