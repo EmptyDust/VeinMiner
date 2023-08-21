@@ -16,6 +16,8 @@ public final class CAT extends JavaPlugin implements Listener {
     PluginManager pluginManager = this.getServer().getPluginManager();
     @Override
     public void onEnable() {
+        MineListener.oreList();
+        MineListener.cropList();
         // Plugin startup logic
         Bukkit.getConsoleSender().sendMessage("Hello World!");
         //注册
@@ -87,7 +89,7 @@ public final class CAT extends JavaPlugin implements Listener {
         return completions;
     }
 
-    private boolean isChildString(String child,String parent){
+    private boolean isChildString(String child, String parent) {
         if (child.length()>=parent.length()){
             return false;
         }else {
