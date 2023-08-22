@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -22,9 +23,10 @@ public class MineListener implements Listener {
     private static final ArrayList<Material> seeds = new ArrayList<>();
     private static final Set<UUID> openedPlayerUUID = new HashSet<>();
     private static final Set<UUID> withoutSneakPlayerUUID = new HashSet<>();
+    private static final HashMap<UUID, Integer> maxChainMineMap = new HashMap<>();
     private static final Queue<Block> blockQueue = new LinkedList<>();
     private static final Set<Block> mineBlock = new HashSet<>();
-    private final int maxChainMine = 64;
+    private final int defaultMaxChainMine = 64;
 
     public static void addOpenedPlayerUUID(UUID uuid){openedPlayerUUID.add(uuid);}
     public static void removeOpenedPlayerUUID(UUID uuid){openedPlayerUUID.remove(uuid);}
@@ -32,6 +34,14 @@ public class MineListener implements Listener {
     public static void addSneakPlayerUUID(UUID uuid){withoutSneakPlayerUUID.remove(uuid);}
     public static void removeSneakPlayerUUID(UUID uuid){withoutSneakPlayerUUID.add(uuid);}
     public static boolean containSneakPlayerUUID(UUID uuid){return !withoutSneakPlayerUUID.contains(uuid);}
+    public static void setMaxChainMine(Player player,int maxChainMine){
+        UUID uuid = player.getUniqueId();
+        if (maxChainMine >= 4&&maxChainMine <= 128){
+            maxChainMineMap.put(uuid,maxChainMine);
+        }else {
+            player.sendMessage("The maxChainMine must range from 4 to 128.");
+        }
+    }
 
     @EventHandler
     public void blockBreak(BlockBreakEvent e) {
@@ -39,6 +49,7 @@ public class MineListener implements Listener {
         Player p = e.getPlayer();
         UUID uuid = p.getUniqueId();
         ItemStack mainHand = p.getInventory().getItemInMainHand();
+        int maxChainMine = maxChainMineMap.getOrDefault(uuid, defaultMaxChainMine) - 1;
 
         if (!p.isSneaking()&&containSneakPlayerUUID(uuid)) return;
         if (!containOpenedPlayerUUID(uuid)) return;
@@ -48,10 +59,9 @@ public class MineListener implements Listener {
                 for (Material m:Tag.LOGS.getValues()) {
                     if (b.getType().equals(m)) {
                         mine(p,b,maxChainMine);
-                        break;
+                        return;
                     }
                 }
-                return;
             }
         }
 
@@ -60,10 +70,9 @@ public class MineListener implements Listener {
                 for (Material m:ores){
                     if (b.getType().equals(m)) {
                         mine(p,b,maxChainMine);
-                        break;
+                        return;
                     }
                 }
-                return;
             }
         }
 /*
@@ -73,45 +82,29 @@ public class MineListener implements Listener {
                 for (Material m:crops){
                     if (b.getType().equals(m)){
                         plant(p,b,maxChainMine);
-                        break;
+                        return;
                     }
                 }
-                return;
             }
         }
 */
     }
 
-/*
-    public void plant(Player p, Block b,int n){
-        if (n<1) return;
-        String name = b.getType().name();
-        b.breakNaturally();
-        for (int x=1;x>-2;x--){
-            for (int y=1;y>-2;y--) {
-                for (int z=1;z>-2;z--){
-                    if (!(x==0&&y==0&&z==0)){
-                        Location loc = b.getLocation();
-                        Block b1 = loc.add(x,y,z).getBlock();
-                        for (Material m:crops){
-                            if (b1.getType().name().equalsIgnoreCase(name)) {
-                                plant(p,b1,n-1);
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    @EventHandler
+    public void playerLogin(PlayerLoginEvent e) {
+        Player player = e.getPlayer();
+        UUID uuid = player.getUniqueId();
+        if (!maxChainMineMap.containsKey(uuid))
+            setMaxChainMine(player,defaultMaxChainMine);
     }
-*/
     private void mine(Player player, Block block, int maxMine) {
         if (maxMine < 1) return;
-        String blockTypeName = block.getType().name();
         ItemStack mainHand = player.getInventory().getItemInMainHand();
         if (getDurability(mainHand) == 1)
             return;
 
         int i = 0;
+        String blockTypeName = block.getType().name();
 
         blockQueue.offer(block);
         mineBlock.add(block);

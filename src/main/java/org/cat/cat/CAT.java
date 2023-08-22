@@ -18,6 +18,7 @@ public final class CAT extends JavaPlugin implements Listener {
     public void onEnable() {
         MineListener.oreList();
         MineListener.cropList();
+
         // Plugin startup logic
         Bukkit.getConsoleSender().sendMessage("Hello World!");
         //注册
@@ -34,12 +35,18 @@ public final class CAT extends JavaPlugin implements Listener {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (command.getName().equalsIgnoreCase("chainmine")&&(sender instanceof Player p)){
             UUID uuid = p.getUniqueId();
-            String usage = "/chainmine (open|close|sneak)";
-            if (args.length==1){
+            String usage = "/chainmine (open|close|sneak)\n/chainmine max <maxChainMine>";
+
+            if (args.length == 1){
                 String commend = args[0];
+
                 if (commend.equalsIgnoreCase("open")){
                     MineListener.addOpenedPlayerUUID(uuid);
-                    sender.sendMessage("Chain mine has been opened!Sneak to trigger chain mining!");
+                    if (MineListener.containSneakPlayerUUID(uuid)){
+                        sender.sendMessage("Chain mine has been opened!Sneak to trigger chain mining!");
+                    }else {
+                        sender.sendMessage("Chain mine has been opened!");
+                    }
                 }else if (commend.equalsIgnoreCase("close")){
                     MineListener.removeOpenedPlayerUUID(uuid);
                     sender.sendMessage("Chain mine has been closed!");
@@ -55,6 +62,17 @@ public final class CAT extends JavaPlugin implements Listener {
                     }
                 }else {
                     sender.sendMessage(usage);
+                }
+            }else if (args.length == 2){
+                String commend = args[0];
+
+                if (commend.equalsIgnoreCase("max")) {
+                    try {
+                        int maxChainMine = Integer.parseInt(args[1]);
+                        MineListener.setMaxChainMine(p,maxChainMine);
+                    }catch (NumberFormatException e){
+                        sender.sendMessage(usage);
+                    }
                 }
             }else {
                 sender.sendMessage(usage);
@@ -75,17 +93,24 @@ public final class CAT extends JavaPlugin implements Listener {
                     completions.add("open");
                 if (isChildString(arg1,"close"))
                     completions.add("close");
-                if (isChildString(arg1,"sneak")){
+                if (isChildString(arg1,"sneak"))
                     completions.add("sneak");
-                }
+                if (isChildString(arg1,"max"))
+                    completions.add("max");
                 if (args[0].isEmpty()){
                     completions.add("open");
                     completions.add("close");
                     completions.add("sneak");
+                    completions.add("max");
                 }
             }
+            /*
+            if (args.length == 2){
+                if (args[0].equalsIgnoreCase("max")&&args[1].isEmpty())
+                    completions.add("<maxChainMine>");
+            }
+            */
         }
-
         return completions;
     }
 
